@@ -1,0 +1,104 @@
+<!-- article summarization web page-->
+{% load static %}
+<html>
+    <head>
+        <title>Article Summarization</title>
+        <link rel="stylesheet" href="{% static 'css/styles.css'%}">
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div class="nav-wrapper">
+                    <a href="#" class="brand-logo">Article Summarization</a>
+                    
+                </div>
+            </nav>
+        </header>
+        <!--form input article at left and textfield output result at right-->
+        <div class="container">
+            <div class="menuBar">
+                <h3>Modes:</h3>
+                <div>
+                    <input type="radio" id="naive_bayes" name="mode" value="naive_bayes" checked>
+                    <label for="naive_bayes">Naive Bayes</label>
+                </div>
+                <div>
+                    <input type="radio" id="neural_network" name="mode" value="neural_network">
+                    <label for="neural_network">Neural Network</label>
+                </div>
+                <div>
+                    <input type="radio" id="decision_tree" name="mode" value="decision_tree">
+                    <label for="decision_tree">Decision Tree</label>
+                </div>
+            </div>
+            <div class="leftRightContainer">
+                <div class="left">
+                    <form>
+                        {% csrf_token %}
+                        <textarea name="text">{{ text }}</textarea>
+                        <input class="submit" type="submit" value="Summarize" onclick="summarize(); return false;" />
+                    </form>                     
+                    <form action="upload/" method="POST" enctype="multipart/form-data"id="summarize-form">
+                        {% csrf_token %}
+                        <label class="uploadtag">
+                            Upload
+                            <input class="upload" type="file" name="pdf_file" accept=".pdf" onchange="upload()"/>
+                        </label>
+                    </form>
+                </div>
+                <div class="right">
+                    <form>
+                        {% csrf_token %}
+                        <textarea name="summary">
+                            {{ summary|safe }}
+                        </textarea>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+    <script>
+        function upload() {
+            document.getElementById("summarize-form").submit();
+        }
+
+        function summarize() {
+            // Get the selected algorithm
+            var algorithm;
+            if (document.getElementById('naive_bayes').checked) {
+              algorithm = 'naive_bayes';
+            } else if (document.getElementById('neural_network').checked) {
+              algorithm = 'neural_network';
+            } else if (document.getElementById('decision_tree').checked) {
+              algorithm = 'decision_tree';
+            }
+          
+            // Send a POST request to the summarize view using the fetch API
+            var formData = new FormData();
+            formData.append('text', document.getElementsByName('text')[0].value);
+            formData.append('mode', algorithm);
+            fetch('summarize/', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': "{{ csrf_token }}"
+              }
+            }).then(function(response) {
+              return response.text();
+            }).then(function(summary) {
+                var jsonString = summary;
+                var jsonObject = JSON.parse(jsonString);
+                var summaryResult = jsonObject.summary;
+                //let output = '';
+                //for (const [key, value] of Object.entries(summaryResult)) {
+                //    output += `${key}:\n ${value}\n\n`;
+                //}
+                console.log(summary)
+                //console.log(output);
+              // Display the summary in the output text area
+              document.getElementsByName('summary')[0].value = summaryResult;
+            });
+        
+        }
+    </script>
+</html>
