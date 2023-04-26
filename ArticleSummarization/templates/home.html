@@ -49,7 +49,7 @@
                 <div class="right">
                     <form>
                         {% csrf_token %}
-                        <textarea name="summary">
+                        <textarea readonly name="summary">
                             {{ summary|safe }}
                         </textarea>
                     </form>

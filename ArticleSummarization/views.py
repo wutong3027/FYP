@@ -55,10 +55,6 @@ def summarize(request):
     text = request.POST.get('text', '')
     mode = request.POST.get('mode', 'naive_bayes') # Default to naive bayes if mode is not provided
 
-    # sentences = nltk.sent_tokenize(text)
-
-    # print(sentences)
-
     # Define section keywords
     section_keywords = {
         'introduction': ['introduction', 'background', 'motivation'],
@@ -73,7 +69,7 @@ def summarize(request):
     current_section = None
     for line in text.splitlines():
         # Check if line matches any of the section headers
-        if any(header.lower() in line.lower() for header in section_keywords) and len(line.split()) <= 3:
+        if any(header.lower() in line.lower() for header in section_keywords) and len(line.split()) <= 5:
             # If so, start a new section
             print(len(line.split()))
             current_section = line.strip()
@@ -88,46 +84,21 @@ def summarize(request):
                 sections["Overall"] = ""
             sections["Overall"] += line.strip() + " "
 
-    print("-------------------------")
-    print("Collected section headers:", list(sections.keys()))
-    #print(sections)
-    for text in sections:
-        # print(sections.keys())
-        print(text)
-        print(sections[text])
-        print()
-
-
-    # # Identify sections
-    # section_labels = []
-    # for sentence in sentences:
-    #     for section, keywords in section_keywords.items():
-    #         if any(re.search(keyword, sentence, re.IGNORECASE) for keyword in keywords):
-    #             section_labels.append(section)
-    #             break
-    #     else:
-    #         section_labels.append('miscellaneous')
-
-    # # Group sentences by section
-    # section_sentences = {}
-    # for sentence, section in zip(sentences, section_labels):
-    #     section_sentences.setdefault(section, []).append(sentence)
-
-    # # Generate summary for each section
-    # section_summaries = {}
-    # for section, sentences in section_sentences.items():
-    #     summary = NB_generate_summary(' '.join(sentences))
-    #     section_summaries[section] = summary
-
     section_summaries = {}
     for text in sections:
-        section_summaries[text] = NN_generate_summary(sections[text])
+        # Select classifier based on mode and fit classifier to data
+        if mode == 'naive_bayes':
+            section_summaries[text] = NB_generate_summary(sections[text])
+        elif mode == 'neural_network':
+            section_summaries[text] = NN_generate_summary(sections[text])
+        elif mode == 'decision_tree':
+            section_summaries[text] = DT_generate_summary(sections[text])
+        else:
+            section_summaries[text] = NN_generate_summary(sections[text])
           
     # Join section summaries with line breaks
     summary = '\n'.join([f"{section.upper()}\n{section_summaries[section]}\n" for section in section_summaries])
     print(summary)
-    # summary = NB_generate_summary(text)
-    # summary = ""
     return JsonResponse({'summary': summary})
 
 def NB_generate_summary(text):
@@ -144,19 +115,29 @@ def NB_generate_summary(text):
     # stop_words = set(stopwords.words('english'))
     # words = word_tokenize(text)
     # words = [word.lower() for word in words if word.isalnum() and word.lower() not in stop_words]
-    words = re.sub('[^a-zA-Z]', ' ', text)
-    words = words.lower()
-    words = words.split()
-    ps = PorterStemmer()
-    words = [ps.stem(word) for word in words if not word in set(stopwords.words('english'))]
-    words = ' '.join(words)
+    # words = re.sub('[^a-zA-Z]', ' ', text)
+    # words = words.lower()
+    # words = words.split()
+    # ps = PorterStemmer()
+    # words = [ps.stem(word) for word in words if not word in set(stopwords.words('english'))]
+    # words = ' '.join(words)
     
-    # calculating the word frequency distribution
-    freq_dist = FreqDist(words)
+    # # calculating the word frequency distribution
+    # freq_dist = FreqDist(words)
     
+    processed_sentences = []
+    for sentence in sentences:
+        words = re.sub('[^a-zA-Z]', ' ', sentence)
+        words = words.lower()
+        words = words.split()
+        ps = PorterStemmer()
+        words = [ps.stem(word) for word in words if not word in set(stopwords.words('english'))]
+        words = ' '.join(words)
+        processed_sentences.append(words)
+
     # feature extraction
     cv = CountVectorizer(stop_words='english')
-    sentence_features = cv.fit_transform(sentences)
+    sentence_features = cv.fit_transform(processed_sentences)
     
     # creating labels for training data
     summary_sentences_idx = heapq.nlargest(num_sentences, range(len(sentences)), key=lambda i: sentence_features[i].sum())
@@ -178,9 +159,7 @@ def NB_generate_summary(text):
 def NN_generate_summary(text):
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
     model = AutoModelForSeq2SeqLM.from_pretrained('facebook/bart-large-cnn')
-
-    # text = "Signals are only permitted to move in one direction via feed-forward neural networks, which is from the input to the output. A network that feeds data from the input layer to the output layer is known as a feedforward neural network (Dematos, Boyd, Kermanshahi, Kohzadi, & Kaastra, 1996). There is no feedback, hence the fact that the output of one layer does not have an effect on that same layer is not a problem. In most cases, feed-forward networks are straightforward configurations that link inputs and outputs directly. From the approach above, seven characteristics were derived from the sentences that were provided as input. After the network has learned the characteristics that most accurately describe the summary phrase, a process known as feature fusing is carried out by eliminating and merging certain features. The most important step is called the feature fusion phase, and it's during this phase that the relationships between the features are figured out in two phases. 1) removing elements that are used seldom 2) reducing common characteristics into fewer groups before evaluating the sentences to determine which ones are the most significant summary sentences. After that, the pruned network model is used to identify the summary sentences.Furthermore, Svore et al. (2007) at the Microsoft Research Department created a system for the summarization of a single document that is known as NetSum. A neural network model was used in the development of the NetSum system, which was designed to generate summaries automatically (Yogan et al., 2016). The NetSum system is a single-document summarizer that makes use of neural networks to improve sentence features. The network model is trained with the help of the training set, which consists of articles obtained from CNN.com suggest by the author. Using a neural network that contains a gradient descent approach for the training, the trained model was able to infer the correct ranking of sentences inside a test document. A sentence containing the keyword search entered by the user has a better probability of being included in the generated output summary (Svore et al., 2007). It employs machine learning methods by labelling a train set such that the labels determine the most effective sentences. It then takes up to three phrases from the text that are the most relevant to its highlights. After that, the trained model is applied to the task of ranking newly created sentences. The RankNet algorithm (Burges, Shaked, Renshaw, Lazier, Deeds, Hamilton & Hullender, 2005) is used in the process of sentence ranking carried out by the NetSum system.Decision tree learning is one of the most used and useful techniques for inductive approach (Mitchell, 1997). It is a technique for approximating discrete-valued functions that is able to learn disjunctive formulations and is robust to noisy input. In this technique, the learnt function is represented by a decision tree, and the technique is called decision tree learning. In order to make learned trees more comprehensible to humans, they may also be represented as sets of if-then rules. Breaking a data set down into smaller subsets while concurrently creating the corresponding decision tree is the process that decision trees use to construct a classification and regression tree model in the form of a tree structure. The decision tree is a hierarchical structure with one root node, and it is breaking its parent-child-related branches. The root node defining a testing condition which outcome corresponds to a branch leading to an internal node. Classifications are assigned to the terminal nodes of the tree in figure 2.3, also known as the leaf nodes. The Decision Node and the Leaf Node are the two different types of nodes that may be found in a decision tree. It is a classifier in the form of a tree, with internal nodes representing the characteristics of a dataset, branches representing the decision rules, and each leaf node representing the conclusion of the classification. Decision nodes are used to make decision and have numerous branches, whereas Leaf nodes represent the results of these decisions and do not contain any more branches."
-
+    
     if text is not None:
         input_ids = tokenizer(text, truncation=True, max_length=1024, padding='max_length', return_tensors='pt')
         summary_ids = model.generate(input_ids['input_ids'], num_beams=10, max_length=512)
@@ -192,11 +171,18 @@ def DT_generate_summary(text):
     sentences = nltk.sent_tokenize(text)
 
     # Preprocess the text
-    punctuation = string.punctuation.replace(".", "")  # Remove periods from punctuation
+    # punctuation = string.punctuation.replace(".", "")  # Remove periods from punctuation
     processed_sentences = []
     for sentence in sentences:
-        nopunc = "".join([char for char in sentence if char not in punctuation])
-        processed_sentences.append(nopunc.lower())
+        # nopunc = "".join([char for char in sentence if char not in punctuation])
+        # processed_sentences.append(nopunc.lower())
+        words = re.sub('[^a-zA-Z]', ' ', sentence)
+        words = words.lower()
+        words = words.split()
+        ps = PorterStemmer()
+        words = [ps.stem(word) for word in words if not word in set(stopwords.words('english'))]
+        words = ' '.join(words)
+        processed_sentences.append(words)
 
     # Create BoW feature vectors
     vectorizer = CountVectorizer()
