@@ -47,22 +47,52 @@
                     </form>
                 </div>
                 <div class="right">
+                    <div id="loading" class="loading"></div>
                     <form>
                         {% csrf_token %}
                         <textarea readonly name="summary">
                             {{ summary|safe }}
+                            
                         </textarea>
                     </form>
                 </div>
             </div>
         </div>
+        <footer>
+          <p> &copy 2023 Article Summarization LIM WU TONG 72789</p>
+        </footer>
     </body>
     <script>
         function upload() {
-            document.getElementById("summarize-form").submit();
+            var formData = new FormData();
+            var fileInput = document.querySelector('input[type="file"]');
+            var file = fileInput.files[0];
+            formData.append('pdf_file', file);
+          
+            fetch('/upload/', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-CSRFToken': "{{ csrf_token }}",
+              },
+            })
+              .then(function (response) {
+                return response.json();
+              })
+              .then(function (data) {
+                var textArea = document.querySelector('textarea[name="text"]');
+                textArea.value = data.text;
+              })
+              .catch(function (error) {
+                console.log(error);
+              });
         }
 
         function summarize() {
+          // clear the summary textarea
+            document.getElementsByName('summary')[0].value = '';
+            // Show the loading animation
+            document.getElementById('loading').style.display = 'block';
             // Get the selected algorithm
             var algorithm;
             if (document.getElementById('naive_bayes').checked) {
@@ -86,16 +116,11 @@
             }).then(function(response) {
               return response.text();
             }).then(function(summary) {
+                document.getElementById('loading').style.display = 'none';
                 var jsonString = summary;
                 var jsonObject = JSON.parse(jsonString);
                 var summaryResult = jsonObject.summary;
-                //let output = '';
-                //for (const [key, value] of Object.entries(summaryResult)) {
-                //    output += `${key}:\n ${value}\n\n`;
-                //}
                 console.log(summary)
-                //console.log(output);
-              // Display the summary in the output text area
               document.getElementsByName('summary')[0].value = summaryResult;
             });
         
