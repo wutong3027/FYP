@@ -14,7 +14,7 @@ class User:
                 for page_num in range(pdf_doc.page_count):
                     page = pdf_doc.load_page(page_num)
                     text += page.get_text()
-        
+                             
         return text
     
     # Generate summaries
@@ -25,13 +25,12 @@ class User:
         # Define section keywords
         section_keywords = {
             'introduction': ['introduction', 'background', 'motivation'],
-            'related work': ['related work', 'previous work', 'literature review'],
+            'related work': ['related work', 'previous work', 'literature review','related works', 'review', 'reviews'],
             'methodology': ['methodology', 'method', 'approach'],
             'results': ['results', 'findings', 'experiment'],
-            'discussion': ['discussion', 'conclusion', 'implications'],
-            'acknowledgements': ['acknowledgments', 'acknowledgements'],
+            'conclusion': ['discussion', 'conclusion', 'implications', 'future work', 'future works'],
         }
-        #     # Split text into sections based on section headers
+        # Split text into sections based on section headers
         sections = {}
         current_section = None
         for line in text.splitlines():

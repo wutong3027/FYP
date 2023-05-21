@@ -2,14 +2,15 @@
 {% load static %}
 <html>
     <head>
-        <title>Article Summarization</title>
+        <title>ArtSum</title>
         <link rel="stylesheet" href="{% static 'css/styles.css'%}">
+        <link rel="icon" type="image/png" href="{% static 'ArtSum/2.png'%}">
     </head>
     <body>
         <header>
             <nav>
                 <div class="nav-wrapper">
-                    <a href="#" class="brand-logo">Article Summarization</a>
+                    <a href="" class="brand-logo"><img src="{% static 'ArtSum/1.png'%}" alt="Article Summarization Logo" class="logo"></a>
                     
                 </div>
             </nav>
@@ -45,6 +46,7 @@
                             <input class="upload" type="file" name="pdf_file" accept=".pdf" onchange="upload()"/>
                         </label>
                     </form>
+                    <center><div class="word-count" id="word-count" style="display:none;"><span id="word-count"></span> Words </div></center>
                 </div>
                 <div class="right">
                     <div id="loading" class="loading"></div>
@@ -55,15 +57,23 @@
                             
                         </textarea>
                     </form>
+                    <center>
+                        <div class="summarydiv" id="summarydiv" style="display:none;"><span id="summary-count"></span> Words 
+                        </br>
+                          <p>Summarization Time: <span id="time-counter"></span></p>
+                        </div>
+                    </center>
                 </div>
             </div>
         </div>
         <footer>
-          <p> &copy 2023 Article Summarization LIM WU TONG 72789</p>
+          <center><p> &copy 2023 Article Summarization LIM WU TONG 72789</p></center>
         </footer>
     </body>
     <script>
         function upload() {
+            const wordCount = document.getElementById('word-count');
+            wordCount.style.display = 'block';
             var formData = new FormData();
             var fileInput = document.querySelector('input[type="file"]');
             var file = fileInput.files[0];
@@ -82,6 +92,9 @@
               .then(function (data) {
                 var textArea = document.querySelector('textarea[name="text"]');
                 textArea.value = data.text;
+                var wordCount = data.num_words;
+                var wordCountLabel = document.querySelector('span[id="word-count"]');
+                wordCountLabel.innerHTML = wordCount;
               })
               .catch(function (error) {
                 console.log(error);
@@ -89,6 +102,7 @@
         }
 
         function summarize() {
+          var startTime = performance.now();
           // clear the summary textarea
             document.getElementsByName('summary')[0].value = '';
             // Show the loading animation
@@ -117,11 +131,27 @@
               return response.text();
             }).then(function(summary) {
                 document.getElementById('loading').style.display = 'none';
+                document.getElementById('summarydiv').style.display = 'block';
                 var jsonString = summary;
                 var jsonObject = JSON.parse(jsonString);
                 var summaryResult = jsonObject.summary;
                 console.log(summary)
-              document.getElementsByName('summary')[0].value = summaryResult;
+                document.getElementsByName('summary')[0].value = summaryResult;
+                var summaryCount = jsonObject.summary_count;
+                var summaryCountLabel = document.querySelector('span[id="summary-count"]');
+                summaryCountLabel.innerHTML = summaryCount;
+                // Calculate the elapsed time
+                var elapsedTime = performance.now() - startTime;
+
+                // Convert the elapsed time to a human-readable format
+                var elapsedSeconds = Math.round(elapsedTime / 1000);
+                var elapsedMinutes = Math.floor(elapsedSeconds / 60);
+                var elapsedSecondsRemainder = elapsedSeconds % 60;
+                var elapsedFormatted = elapsedMinutes + "m " + elapsedSecondsRemainder + "s";
+
+                // Update the time counter element in the HTML
+                var timeCounter = document.getElementById("time-counter");
+                timeCounter.textContent = elapsedFormatted;
             });
         
         }

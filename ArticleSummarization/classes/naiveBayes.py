@@ -18,16 +18,19 @@ class NaiveBayes(MachineLearning):
         self.model = MultinomialNB()
         self.tokenizer = CountVectorizer(stop_words='english')
 
-    def NB_generate_summary(self, text):
-        num_sentences = 5
+    def NB_generate_summary(self, text, num_sentences=3):
+        # tokenizing the text by sentence
+        sentences = sent_tokenize(text)
+
+        num_sentences = (len(sentences) // 2) 
+        if num_sentences <= 2:
+            num_sentences = 3
+        print(num_sentences)
         if not isinstance(text, str):
             raise TypeError('Input must be a string')
         if not isinstance(num_sentences, int) or num_sentences < 1:
             raise ValueError('Number of sentences must be a positive integer')
-        
-        # tokenizing the text by sentence
-        sentences = sent_tokenize(text)
-        
+
         processed_sentences = []
         for sentence in sentences:
             words = re.sub('[^a-zA-Z]', ' ', sentence)

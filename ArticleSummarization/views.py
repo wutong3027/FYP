@@ -1,11 +1,5 @@
-import io
-import fitz
 import nltk
-import json
-import re
-from django.http import HttpResponse
 from django.shortcuts import render
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.http import JsonResponse
 from ArticleSummarization.classes.user import User
 from ArticleSummarization.classes.article import Article
@@ -30,7 +24,8 @@ def upload(request):
         pdf_file = request.FILES.get('pdf_file', None)
         text = user.upload_file(pdf_file)
         article = Article(pdf_file.name,text)
-        return JsonResponse({'text': text})
+        num_words = len(text.split())
+        return JsonResponse({'text': text, 'num_words': num_words})
     
     else:
         return render(request, 'home.html')
@@ -41,4 +36,5 @@ def summarize(request):
     text = request.POST.get('text', '')
     mode = request.POST.get('mode', 'naive_bayes') # Default to naive bayes if mode is not provided
     summary = user.summarize(text , mode)
-    return JsonResponse({'summary': summary})
+    summary_count = len(summary.split())
+    return JsonResponse({'summary': summary, 'summary_count': summary_count})

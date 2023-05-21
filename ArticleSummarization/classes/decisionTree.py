@@ -18,12 +18,13 @@ class DecisionTree(MachineLearning):
     def DT_generate_summary(self, text):
         sentences = nltk.sent_tokenize(text)
 
+        num_sentences = (len(sentences) // 2) 
+        if num_sentences <= 2:
+            num_sentences = 3
+
         # Preprocess the text
-        # punctuation = string.punctuation.replace(".", "")  # Remove periods from punctuation
         processed_sentences = []
         for sentence in sentences:
-            # nopunc = "".join([char for char in sentence if char not in punctuation])
-            # processed_sentences.append(nopunc.lower())
             words = re.sub('[^a-zA-Z]', ' ', sentence)
             words = words.lower()
             words = words.split()
@@ -45,7 +46,6 @@ class DecisionTree(MachineLearning):
         scores = dt.predict(X)
 
         # Select the top-scoring sentences as the summary
-        num_sentences = 3  # Set the desired number of summary sentences
         summary_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:num_sentences]
         summary_sentences = [sentences[i] for i in summary_indices]
         summary = " ".join(summary_sentences)
