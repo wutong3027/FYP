@@ -1,3 +1,4 @@
 /ArticleSummarization/static/dataset
 /.vscode
 /ArticleSummarization/textModel
+/ArticleSummarization/__pycache__
